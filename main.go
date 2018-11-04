@@ -3,14 +3,15 @@ package main
 import (
 	"github.com/gorilla/context"
 	"github.com/gorilla/handlers"
+	"github.com/gorilla/mux"
 	"github.com/gorilla/sessions"
 	"log"
+	"myvm/controller"
+	"myvm/config"
 	"net/http"
 	"os"
 	"strings"
 	"time"
-	"myvm/controller"
-	"github.com/gorilla/mux"
 )
 
 const (
@@ -26,14 +27,7 @@ func init() {
 	time.Local = loc
 }
 
-func getEnv(key, def string) string {
-   if v, ok := os.LookupEnv(key); ok {
-     return v
-   }
-   return def
-}
 
-type MethodHandler map[string]http.Handler
 
 
 func NotFoundHandler(w http.ResponseWriter, r *http.Request) {
@@ -50,15 +44,6 @@ func status(code int, allow ...string) func(w http.ResponseWriter, req *http.Req
 }
 
 func main() {
-	var (
-		port   = getEnv("APP_PORT", "5000")
-		//dbhost = getEnv("DB_HOST", "127.0.0.1")
-		//dbport = getEnv("DB_PORT", "3306")
-		//dbuser = getEnv("DB_USER", "root")
-		//dbpass = getEnv("DB_PASSWORD", "")
-		//dbname = getEnv("DB_NAME", "testdb")
-		//public = getEnv("PUBLIC_DIR", "public")
-	)
 
 	//dbusrpass := dbuser
 	//if dbpass != "" {
@@ -77,10 +62,11 @@ func main() {
 	h := controller.NewHandler(store)
 	r := mux.NewRouter()
 	r.HandleFunc("/user/{id:[0-9]+}", h.ShowId).Methods("GET")
-	r.HandleFunc("/user/{id:[0-9]+}", status(405, "GET")).Methods("POST","PUT", "PATCH", "DELETE")
+	r.HandleFunc("/user/{id:[0-9]+}", status(405, "GET"))
+	//r.HandleFunc("/user/{id:[0-9]+}", status(405, "GET")).Methods("POST","PUT", "PATCH", "DELETE")
 	r.NotFoundHandler = http.HandlerFunc(NotFoundHandler)
 
-	addr := ":" + port
+	addr := ":" + config.Port
 	log.Printf("[INFO] start server %s", addr)
 	log.Fatal(http.ListenAndServe(addr, context.ClearHandler(handlers.LoggingHandler(os.Stderr, r))))
 }
